@@ -1,0 +1,271 @@
+package io.otot.kitten.gateway.connector.network.ws;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.util.Attribute;
+import io.netty.util.CharsetUtil;
+import io.otot.kitten.gateway.connector.core.NamedThreadFactory;
+import io.otot.kitten.gateway.connector.network.AuthService;
+import io.otot.kitten.gateway.connector.network.EventHandler;
+import io.otot.kitten.gateway.connector.network.NetworkService;
+import io.otot.kitten.gateway.connector.network.SessionChannel;
+import io.otot.kitten.gateway.connector.utils.TimeTools;
+import io.otot.kitten.gateway.connector.utils.URITools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+
+/***
+ * websocke 的网络层实现
+ * @author fireflyhoo
+ */
+public class WebsocketNetworkServiceNettyImpl implements NetworkService {
+
+
+    private final static Logger LOGGER = LoggerFactory.getLogger(WebsocketNetworkServiceNettyImpl.class);
+    private static Charset UTF_8 = StandardCharsets.UTF_8;
+    private Map<String, SessionChannel> sessionChannels = new ConcurrentHashMap<>();
+
+    private NioEventLoopGroup bossGroup;
+    private NioEventLoopGroup workGroup;
+    private ServerBootstrap serverBootstrap;
+    private ChannelFuture channelFuture;
+
+    /***
+     * 服务监听端口
+     */
+    private int port = 8433;
+
+    /***
+     * 消息处理器
+     */
+    private EventHandler hander;
+
+    /***
+     * 认证服务
+     */
+    private AuthService authService;
+
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+
+    @Override
+    public void start() {
+        // XXX 待优化性能
+        bossGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() * 2, new NamedThreadFactory("websocket-netty-boss-group"));
+        workGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() * 4, new NamedThreadFactory("websocket-netty-work-group"));
+        serverBootstrap = new ServerBootstrap();
+        serverBootstrap.group(bossGroup, workGroup).channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel socketChannel) throws Exception {
+                        ChannelPipeline pipeline = socketChannel.pipeline();
+                        pipeline.addLast(new HttpServerCodec());
+                        pipeline.addLast(new HttpObjectAggregator(8192 * 1000));
+                        pipeline.addLast(new ChunkedWriteHandler());
+                        pipeline.addLast(new WebSocketHandler(hander, authService));
+                    }
+                });
+        try {
+            channelFuture = serverBootstrap.bind(new InetSocketAddress(port)).sync();
+            LOGGER.info("WebSocket Server listening in: {}", port);
+        } catch (Exception e) {
+            LOGGER.error("启动服务线程出现异常", e);
+        }
+    }
+
+    @Override
+    public void stop() {
+        if (channelFuture != null) {
+            try {
+                channelFuture.channel().close().get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            if (bossGroup != null) {
+                try {
+                    bossGroup.shutdownGracefully().get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (workGroup != null) {
+                try {
+                    workGroup.shutdownGracefully().get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+
+    }
+
+    @Override
+    public void setEventHandler(EventHandler handler) {
+        this.hander = handler;
+    }
+
+    @Override
+    public SessionChannel getChannel(String key) {
+        return sessionChannels.get(key);
+    }
+
+    @Override
+    public SessionChannel setChannel(String key, SessionChannel channel) {
+        return sessionChannels.put(key,channel);
+    }
+
+    @Override
+    public SessionChannel removeChannel(String key) {
+        return sessionChannels.remove(key);
+    }
+
+    class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
+
+
+        /***
+         * websocket的处理URL
+         */
+        private static final String WS_URL = "/socket-io";
+
+        private final EventHandler eventHandler;
+        private final AuthService authService;
+
+
+        public WebSocketHandler(EventHandler eventHandler, AuthService authService) {
+            this.eventHandler = eventHandler;
+            this.authService = authService;
+        }
+
+        @Override
+        protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (msg instanceof FullHttpRequest) {
+                handleHttpRequest(ctx, (FullHttpRequest) msg);
+            } else if (msg instanceof WebSocketFrame) {
+                handleWebSocketFrame(ctx, (WebSocketFrame) msg);
+            }
+        }
+
+
+        private void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws URISyntaxException {
+            if (!request.decoderResult().isSuccess()) {
+                sendErrorResponse(ctx, HttpResponseStatus.BAD_REQUEST, "数据包未完成");
+                return;
+            }
+            URI url = new URI(request.uri());
+            if (WS_URL.equals(url.getPath())) {
+                URITools.UrlEntity entity = URITools.parse(url.getPath());
+                String appKey = entity.getQuery("appKey");
+                String token = entity.getQuery("token");
+                if (appKey == null) {
+                    sendErrorResponse(ctx, HttpResponseStatus.BAD_REQUEST, "未传入参数:appKey");
+                    return;
+                }
+                if (token == null) {
+                    sendErrorResponse(ctx, HttpResponseStatus.BAD_REQUEST, "未传入参数:token");
+                    return;
+                }
+                try {
+                    String userKey = authService.auth(appKey, token);
+                    Attribute<String> _appKey = ctx.channel().attr(Constants.appKey);
+                    Attribute<String> _userKey = ctx.channel().attr(Constants.userKey);
+                    Attribute<String> _sessionKey = ctx.channel().attr(Constants.key);
+                    _appKey.set(appKey);
+                    _userKey.set(userKey);
+                    _sessionKey.set(appKey + "@" + userKey);
+                    WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
+                            "ws:/" + ctx.channel() + "/socket-io", null, false);
+                    WebSocketServerHandshaker webSocketServerHandshaker = wsFactory.newHandshaker(request);
+                    if (webSocketServerHandshaker == null) {
+                        WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
+                    } else {
+                        webSocketServerHandshaker.handshake(ctx.channel(), request);
+                    }
+                    hander.onConnect(new WebSocketSessionChannel(ctx.channel()));
+                } catch (Exception e) {
+                    LOGGER.error("认证出现异常 appKey:{},token:{}", appKey, token, e);
+                    sendErrorResponse(ctx, HttpResponseStatus.BAD_REQUEST, "认证未成功请联系管理员!");
+                }
+            } else {
+                sendErrorResponse(ctx, HttpResponseStatus.FORBIDDEN, "禁止访问!");
+            }
+        }
+
+        private void handleWebSocketFrame(ChannelHandlerContext channelHandlerContext, WebSocketFrame msg) throws Exception {
+            Attribute<String> att = channelHandlerContext.channel().attr(Constants.key);
+            String channelKey = att.get();
+            SessionChannel sessionChannel = sessionChannels.get(channelKey);
+            if (sessionChannel == null) {
+                sessionChannel = new WebSocketSessionChannel(channelHandlerContext.channel());
+            }
+            if (msg instanceof TextWebSocketFrame || msg instanceof BinaryWebSocketFrame) {
+                sessionChannel.setLastActivityTime(TimeTools.currentTimeMillis());
+                eventHandler.onMessage(sessionChannel, msg.content().array());
+            } else if (msg instanceof CloseWebSocketFrame) {
+                eventHandler.onClose(sessionChannel);
+            } else if (msg instanceof PingWebSocketFrame) {
+                channelHandlerContext.writeAndFlush(new PingWebSocketFrame());
+            } else if (msg instanceof PongWebSocketFrame) {
+                sessionChannel.setLastActivityTime(TimeTools.currentTimeMillis());
+            } else if (msg instanceof ContinuationWebSocketFrame) {
+                LOGGER.warn("收到未完成数据包 ContinuationWebSocketFrame {}", msg);
+            }
+        }
+
+
+        private void sendErrorResponse(ChannelHandlerContext ctx, HttpResponseStatus status, String msg) {
+            DefaultFullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status);
+            ByteBuf buf = Unpooled.copiedBuffer(msg, CharsetUtil.UTF_8);
+            response.content().writeBytes(buf);
+            buf.release();
+            ChannelFuture f = ctx.channel().writeAndFlush(response);
+            f.addListener(ChannelFutureListener.CLOSE);
+        }
+
+        @Override
+        public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+            Attribute<String> att = ctx.channel().attr(Constants.key);
+            String channelKey = att.get();
+            SessionChannel sessionChannel = sessionChannels.get(channelKey);
+            if (sessionChannel == null) {
+                sessionChannel = new WebSocketSessionChannel(ctx.channel());
+            }
+            hander.onClose(sessionChannel);
+        }
+
+
+    }
+}
