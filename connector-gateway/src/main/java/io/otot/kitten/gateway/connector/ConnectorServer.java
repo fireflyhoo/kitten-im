@@ -3,6 +3,7 @@ package io.otot.kitten.gateway.connector;
 import io.otot.kitten.gateway.connector.core.ServiceLifecycle;
 import io.otot.kitten.gateway.connector.kernel.BusinessService;
 import io.otot.kitten.gateway.connector.network.NetworkService;
+import io.otot.kitten.gateway.connector.network.ws.WebsocketNetworkServiceNettyImpl;
 import io.otot.kitten.gateway.connector.queue.CommandQueueManager;
 
 /**
@@ -37,6 +38,9 @@ public class ConnectorServer implements ServiceLifecycle {
 
     public ConnectorServer(int port) {
         this.port = port;
+        WebsocketNetworkServiceNettyImpl net  = new WebsocketNetworkServiceNettyImpl();
+        net.setPort(port);
+        net.setEventHandler(businessService);
 
     }
 

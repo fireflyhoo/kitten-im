@@ -19,10 +19,26 @@ public class WebSocketSessionChannel implements SessionChannel {
 
     private final Channel channel;
 
+    @Override
+    public String getUserKey() {
+        return userKey;
+    }
+
+    @Override
+    public String getAppKey() {
+        return appKey;
+    }
+
+    private final String userKey;
+
+    private final String appKey;
+
     private long lastActivityTime;
 
     public WebSocketSessionChannel(Channel channel) {
         this.channel = channel;
+        this.userKey = channel.attr(Constants.userKey).get();
+        this.appKey =  channel.attr(Constants.appKey).get();
     }
 
     @Override

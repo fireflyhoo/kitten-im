@@ -37,4 +37,17 @@ public interface SessionChannel {
      */
     boolean isOpen();
 
+    /***
+     * 获取会话用户ID
+     * @return
+     */
+    String getUserKey();
+
+
+    /***
+     * 获取会话应用ID
+     * @return
+     */
+    public String getAppKey();
+
 }
