@@ -3,6 +3,7 @@ package io.otot.kitten.gateway.connector.kernel;
 import io.otot.kitten.gateway.connector.network.EventHandler;
 import io.otot.kitten.gateway.connector.network.NetworkService;
 import io.otot.kitten.gateway.connector.network.SessionChannel;
+import io.otot.kitten.gateway.connector.node.NodeService;
 import io.otot.kttten.service.session.client.SessionClent;
 import io.otot.kttten.service.session.model.ImSession;
 
@@ -13,6 +14,7 @@ import io.otot.kttten.service.session.model.ImSession;
 public class BusinessService implements EventHandler {
     private  NetworkService networkService;
     private SessionClent sessionClent;
+    private NodeService nodeService;
 
     public BusinessService(NetworkService networkService) {
         this.networkService = networkService;
@@ -29,10 +31,9 @@ public class BusinessService implements EventHandler {
             oldChannel.close();
         }
         ImSession session = sessionClent.login(servicerKey, sessionKey, uid);
-        if(session != null){
-
+        if(session != null && !servicerKey.equals(session.getServerKey())){
+            nodeService.getNodeClient(session.getServerKey()).notifyRepetitionLogin(session.getAppKey(),session.getUserKey(),servicerKey);
         }
-
     }
 
     @Override
