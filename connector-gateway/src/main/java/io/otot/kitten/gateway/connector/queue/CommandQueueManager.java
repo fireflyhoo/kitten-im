@@ -5,6 +5,7 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import io.otot.kitten.gateway.connector.core.NamedThreadFactory;
+import io.otot.kitten.gateway.connector.kernel.BusinessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ public class CommandQueueManager {
         return provider;
     }
 
-    public void start(WorkHandler<CommandEvent> dcs) {
+    public void start(WorkHandler[] dcs) {
         CommandEventFactory factory = new CommandEventFactory();
         // 初始化Disruptor
         disruptor = new Disruptor<>(factory,

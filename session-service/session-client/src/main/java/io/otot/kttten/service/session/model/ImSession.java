@@ -5,14 +5,6 @@ package io.otot.kttten.service.session.model;
  */
 
 public class ImSession {
-    /**
-     * 会话的应用ID
-     */
-    private  String  appKey;
-    /***
-     * 会话的用户ID
-     */
-    private  String  userKey;
 
 
 
@@ -21,10 +13,29 @@ public class ImSession {
      */
     private  String serverKey;
 
+
+
+    /**
+     * 会话的应用ID
+     */
+    private  String  appKey;
+
+    /***
+     * 会话的用户ID
+     */
+    private  String  userKey;
+
+    /***
+     * 管道ID
+     */
+    private  String uuid;
+
+
     /******
      * 最后活跃时间
      */
     private  long lastActiveTime;
+
 
     public String getAppKey() {
         return appKey;
@@ -57,4 +68,13 @@ public class ImSession {
     public void setLastActiveTime(long lastActiveTime) {
         this.lastActiveTime = lastActiveTime;
     }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
 }

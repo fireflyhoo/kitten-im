@@ -50,4 +50,11 @@ public interface SessionChannel {
      */
     public String getAppKey();
 
+
+    /***
+     * 每次连接的唯一UUID
+     * @return
+     */
+    String getUUID();
+
 }

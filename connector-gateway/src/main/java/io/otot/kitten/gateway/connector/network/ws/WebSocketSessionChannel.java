@@ -19,6 +19,8 @@ public class WebSocketSessionChannel implements SessionChannel {
 
     private final Channel channel;
 
+    private  String  uuid;
+
     @Override
     public String getUserKey() {
         return userKey;
@@ -27,6 +29,11 @@ public class WebSocketSessionChannel implements SessionChannel {
     @Override
     public String getAppKey() {
         return appKey;
+    }
+
+    @Override
+    public String getUUID() {
+        return uuid;
     }
 
     private final String userKey;
@@ -39,6 +46,7 @@ public class WebSocketSessionChannel implements SessionChannel {
         this.channel = channel;
         this.userKey = channel.attr(Constants.userKey).get();
         this.appKey =  channel.attr(Constants.appKey).get();
+        this.uuid  = channel.attr(Constants.key).get();
     }
 
     @Override

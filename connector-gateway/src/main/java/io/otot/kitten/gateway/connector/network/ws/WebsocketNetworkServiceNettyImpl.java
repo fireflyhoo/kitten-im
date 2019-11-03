@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
@@ -205,7 +206,7 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
                     Attribute<String> _sessionKey = ctx.channel().attr(Constants.key);
                     _appKey.set(appKey);
                     _userKey.set(userKey);
-                    _sessionKey.set(appKey + "@" + userKey);
+                    _sessionKey.set(UUID.randomUUID().toString());
                     WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(
                             "ws:/" + ctx.channel() + "/socket-io", null, false);
                     WebSocketServerHandshaker webSocketServerHandshaker = wsFactory.newHandshaker(request);

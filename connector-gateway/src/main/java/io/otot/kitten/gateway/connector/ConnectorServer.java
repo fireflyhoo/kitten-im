@@ -41,16 +41,17 @@ public class ConnectorServer implements ServiceLifecycle {
         WebsocketNetworkServiceNettyImpl net  = new WebsocketNetworkServiceNettyImpl();
         net.setPort(port);
         net.setEventHandler(businessService);
+        this.network = net;
 
     }
 
     @Override
     public void start() {
-
+        network.start();
     }
 
     @Override
     public void stop() {
-
+        network.stop();
     }
 }
