@@ -29,7 +29,7 @@ public interface MessageStoreClient {
      * @param userKey
      * @param msgId
      */
-    void actInbox(String appKey, String userKey, long msgId);
+    void ackInbox(String appKey, String userKey, long msgId);
 
 
 }

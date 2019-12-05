@@ -92,7 +92,7 @@ public class BusinessService implements EventHandler {
             }else  if(message.getType() == ImMessage.MsgType.ACK.getCode()){
 
                 //确收消息
-                storeClient.actInbox(channel.getAppKey(),channel.getUserKey(),msgId);
+                storeClient.ackInbox(channel.getAppKey(),channel.getUserKey(),msgId);
             }else if(message.getType() == ImMessage.MsgType.HEARTBEAT.getCode()){
                 if(!sessionClent.heartbeat(channel.getAppKey(),channel.getUserKey(),channel.getUUID())){
                     //当前连接已经无效
