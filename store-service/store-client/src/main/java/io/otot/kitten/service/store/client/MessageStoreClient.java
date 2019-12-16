@@ -1,4 +1,4 @@
-package io.otot.kttten.service.store.client;
+package io.otot.kitten.service.store.client;
 
 /**
  *

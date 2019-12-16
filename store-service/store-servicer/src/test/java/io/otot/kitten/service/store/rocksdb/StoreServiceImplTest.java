@@ -1,7 +1,7 @@
-package io.otot.kttten.service.store.rocksdb;
+package io.otot.kitten.service.store.rocksdb;
 
 
-import io.otot.kttten.service.store.StoreService;
+import io.otot.kitten.service.store.StoreService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -1,4 +1,4 @@
-package io.otot.kttten.service.store.config;
+package io.otot.kitten.service.store.config;
 
 
 import org.yaml.snakeyaml.Yaml;

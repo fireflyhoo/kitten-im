@@ -1,4 +1,4 @@
-package io.otot.kttten.service.store;
+package io.otot.kitten.service.store;
 
 public interface StoreService {
     /****

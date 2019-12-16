@@ -1,4 +1,4 @@
-package io.otot.kttten.service.store.utils;
+package io.otot.kitten.service.store.utils;
 
 public class ByteTool {
 

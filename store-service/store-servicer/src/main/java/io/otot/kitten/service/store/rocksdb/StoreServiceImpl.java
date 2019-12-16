@@ -1,9 +1,9 @@
-package io.otot.kttten.service.store.rocksdb;
+package io.otot.kitten.service.store.rocksdb;
 
-import io.otot.kttten.service.store.StoreService;
-import io.otot.kttten.service.store.config.ConfigManager;
-import io.otot.kttten.service.store.config.StoreConfig;
-import io.otot.kttten.service.store.utils.ByteTool;
+import io.otot.kitten.service.store.StoreService;
+import io.otot.kitten.service.store.config.ConfigManager;
+import io.otot.kitten.service.store.config.StoreConfig;
+import io.otot.kitten.service.store.utils.ByteTool;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;

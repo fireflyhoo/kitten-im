@@ -1,4 +1,4 @@
-package io.otot.kttten.service.store.config;
+package io.otot.kitten.service.store.config;
 
 /****
  * 存储服务配置信息
