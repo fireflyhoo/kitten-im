@@ -1,6 +1,32 @@
 syntax = "proto3";
 
 option java_multiple_files = false;
-option java_package = "io.grpc.examples.helloworld";
-option java_outer_classname = "HelloWorldProto";
+option java_package = "io.otot.kitten.service.store.grpc";
+option java_outer_classname = "JRPCServiceProto";
 option objc_class_prefix = "OTTO";
+
+package grpc;
+
+service JRPCService{
+
+    rpc execute (JRPCRequest) returns(JRPCResponse);
+
+}
+
+//请求参数
+message JRPCRequest{
+    int32 serialize = 1;
+    repeated int64 requestId  =2;
+    string interface = 3;
+    string method= 4;
+    repeated string methodSign = 5;
+    repeated bytes arguments = 6;
+}
+
+//响应结果
+message JRPCResponse{
+    int32 serialize = 1;
+    bool successful = 2;
+    string typeClazz = 3;
+    bytes body = 4;
+}

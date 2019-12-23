@@ -11,7 +11,7 @@ import io.otot.kitten.gateway.connector.queue.CommandQueueManager;
 import io.otot.kitten.gateway.connector.utils.SerializationTools;
 import io.otot.kttten.service.session.client.SessionClent;
 import io.otot.kttten.service.session.model.ImSession;
-import io.otot.kttten.service.store.client.MessageStoreClient;
+import io.otot.kitten.service.store.client.MessageStoreClient;
 
 /****
  * 业务处理服务
