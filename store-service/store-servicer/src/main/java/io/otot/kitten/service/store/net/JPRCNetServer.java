@@ -3,24 +3,43 @@ package io.otot.kitten.service.store.net;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
-import io.otot.kitten.service.store.config.ConfigManager;
 import io.otot.kitten.service.store.grpc.JRPCServiceGrpc;
 import io.otot.kitten.service.store.grpc.JRPCServiceProto;
 import io.otot.kitten.service.store.utils.MethodTools;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class NetServer {
+public class JPRCNetServer {
+
+
+    private int port = 6009;
 
     private Server server;
 
     private Map<String, JPRCMethodProvider> methodProviders = new ConcurrentHashMap<>();
 
+
+    public JPRCNetServer(int port) {
+        this.port = port;
+    }
+
+    public void addServerProvider(Class clazz, Object instance) {
+        if (!clazz.isInterface()) {
+            throw new IllegalArgumentException("注册的不是接口");
+        }
+        Method[] methods = clazz.getMethods();
+        for (Method method : methods) {
+            String key = MethodTools.getSingsKey(method);
+            methodProviders.put(key, new JPRCMethodProvider(method, instance));
+        }
+    }
+
     public void start() {
-        server = ServerBuilder.forPort(ConfigManager.INSTANCE.getConfig().getPort())
+        server = ServerBuilder.forPort(port)
                 .addService(new GreeterImpl())
                 .build();
         try {
