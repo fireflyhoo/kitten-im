@@ -2,7 +2,7 @@ package io.otot.kitten.service.store;
 
 import io.otot.kitten.service.store.config.ConfigManager;
 import io.otot.kitten.service.store.config.StoreConfig;
-import io.otot.kitten.service.store.net.NetServer;
+import io.otot.kitten.service.store.net.JPRCNetServer;
 import io.otot.kitten.service.store.rocksdb.StoreServiceImpl;
 
 import java.io.IOException;
@@ -17,8 +17,8 @@ public class StoreServiceLauncher {
 
         StoreService storeService = new StoreServiceImpl();
         storeService.start();
-        storeService.put(1000l,"里是什么".getBytes());
-        NetServer netServer  = new NetServer();
+        storeService.put(1000l, "里是什么".getBytes());
+        JPRCNetServer netServer = new JPRCNetServer(ConfigManager.INSTANCE.getConfig().getPort());
         netServer.start();
 
         try {

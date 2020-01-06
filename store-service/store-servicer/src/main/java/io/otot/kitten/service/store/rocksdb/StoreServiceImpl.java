@@ -10,18 +10,23 @@ import org.rocksdb.RocksDBException;
 
 public class StoreServiceImpl implements StoreService {
 
-    private volatile RocksDB rocksDB;
+     private static final int  DB_NUMBER   = 7;
+
+    private volatile RocksDB[] rocksDbS = new RocksDB[DB_NUMBER];
+
 
 
     @Override
     public void start() {
         StoreConfig config = ConfigManager.INSTANCE.getConfig();
         Options options = new Options();
-        options.setTargetFileSizeBase(1024*1024*64);
+      //  options.setTargetFileSizeBase(1024*1024*64);
         options.setCreateIfMissing(true);
         try {
-            RocksDB db = RocksDB.open(options, config.getDataPath());
-            rocksDB = db;
+            for(int i = 0; i< DB_NUMBER; i++){
+                RocksDB db = RocksDB.open(options, config.getDataPath()+"/dataset"+i);
+                rocksDbS[i] = db;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -29,13 +34,15 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public void stop() {
-        rocksDB.close();
+        for (int i=0; i< rocksDbS.length;i++){
+            rocksDbS[i].close();
+        }
     }
 
     @Override
     public void put(long key, byte[] data) {
         try {
-            rocksDB.put(ByteTool.toByteArray(key),data);
+            rocksDbS[(int) (key%DB_NUMBER)].put(ByteTool.toByteArray(key),data);
         } catch (RocksDBException e) {
             throw new  RuntimeException(e);
         }
@@ -44,7 +51,7 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public byte[] get(long key) {
         try {
-            return rocksDB.get(ByteTool.toByteArray(key));
+            return rocksDbS[(int) (key%DB_NUMBER)].get(ByteTool.toByteArray(key));
         } catch (RocksDBException e) {
             throw new  RuntimeException(e);
         }
@@ -53,7 +60,7 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public void remove(long key) {
         try {
-            rocksDB.delete(ByteTool.toByteArray(key));
+            rocksDbS[(int) (key%DB_NUMBER)].delete(ByteTool.toByteArray(key));
         } catch (RocksDBException e) {
             throw new  RuntimeException(e);
         }

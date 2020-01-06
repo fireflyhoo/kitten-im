@@ -32,7 +32,7 @@ public class StoreServiceImplTest {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    for(int i =0; i< 100000;i ++){
+                    for(int i =0; i< 1000000;i ++){
                         storeService.put(23232+i + finalJ *10000 ,("为了持续提升Mockito以及更进一步的提升单元测试体验,我们希望你升级到Mockito2.0.Mockito遵循语意化的版本控制，" +
                                 "除非有非常大的改变才会变化主版本号。在一个库的生命周期中,为了引入一系列有用的特性，修改已存在的行为或者API等重大变更是在所难免的" +
                                 "。因此，我们希望你能够爱上 Mockito 2.0!重要变更 :Mockito从Hamcrest中解耦，自定义的matchers API也发生了改变,查看ArgumentMatcher " +
@@ -55,7 +55,7 @@ public class StoreServiceImplTest {
         }
 
         long endTime = System.currentTimeMillis();
-        System.out.println("put data tps:"+ 10000000 /((endTime-start) /1000));
+        System.out.println("put data tps:"+ 100000000 /((endTime-start) /1000));
     }
 
     @Test
