@@ -8,6 +8,8 @@ import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 
+import java.io.File;
+
 public class StoreServiceImpl implements StoreService {
 
      private static final int  DB_NUMBER   = 7;
@@ -20,7 +22,13 @@ public class StoreServiceImpl implements StoreService {
     public void start() {
         StoreConfig config = ConfigManager.INSTANCE.getConfig();
         Options options = new Options();
-      //  options.setTargetFileSizeBase(1024*1024*64);
+        if(config.getDataPath() == null){
+            throw new IllegalArgumentException("not find dataPath config item");
+        }
+        File dataDir = new File(config.getDataPath());
+        if(!dataDir.exists()){
+            dataDir.mkdirs();
+        }
         options.setCreateIfMissing(true);
         try {
             for(int i = 0; i< DB_NUMBER; i++){
