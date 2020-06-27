@@ -16,13 +16,14 @@ import io.netty.util.Attribute;
 import io.netty.util.CharsetUtil;
 import io.otot.kitten.gateway.connector.core.NamedThreadFactory;
 import io.otot.kitten.gateway.connector.network.AuthService;
-import io.otot.kitten.gateway.connector.network.EventHandler;
+import io.otot.kitten.gateway.connector.network.NetworkEventHandler;
 import io.otot.kitten.gateway.connector.network.NetworkService;
 import io.otot.kitten.gateway.connector.network.SessionChannel;
 import io.otot.kitten.gateway.connector.utils.TimeTools;
 import io.otot.kitten.gateway.connector.utils.URITools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -32,12 +33,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 /***
  * websocke 的网络层实现
  * @author fireflyhoo
  */
+@Service
 public class WebsocketNetworkServiceNettyImpl implements NetworkService {
 
 
@@ -53,12 +54,12 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
     /***
      * 服务监听端口
      */
-    private int port = 8433;
+    private int port = -1;
 
     /***
      * 消息处理器
      */
-    private EventHandler hander;
+    private NetworkEventHandler hander;
 
     /***
      * 认证服务
@@ -70,6 +71,7 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
         return port;
     }
 
+    @Override
     public void setPort(int port) {
         this.port = port;
     }
@@ -106,36 +108,31 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
         if (channelFuture != null) {
             try {
                 channelFuture.channel().close().get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            } catch (Throwable e) {
+                LOGGER.error("close channel close error:", e);
             }
+
             if (bossGroup != null) {
                 try {
                     bossGroup.shutdownGracefully().get();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (workGroup != null) {
-                try {
-                    workGroup.shutdownGracefully().get();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
+                } catch (Throwable e) {
+                    LOGGER.error("bossGroup.shutdownGracefully error:", e);
                 }
             }
 
+            if (workGroup != null) {
+                try {
+                    workGroup.shutdownGracefully().get();
+                } catch (Throwable e) {
+                    LOGGER.error("workGroup.shutdownGracefully error:", e);
+                }
+            }
         }
 
     }
 
     @Override
-    public void setEventHandler(EventHandler handler) {
+    public void setEventHandler(NetworkEventHandler handler) {
         this.hander = handler;
     }
 
@@ -146,7 +143,7 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
 
     @Override
     public SessionChannel setChannel(String key, SessionChannel channel) {
-        return sessionChannels.put(key,channel);
+        return sessionChannels.put(key, channel);
     }
 
     @Override
@@ -162,12 +159,12 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
          */
         private static final String WS_URL = "/socket-io";
 
-        private final EventHandler eventHandler;
+        private final NetworkEventHandler networkEventHandler;
         private final AuthService authService;
 
 
-        public WebSocketHandler(EventHandler eventHandler, AuthService authService) {
-            this.eventHandler = eventHandler;
+        public WebSocketHandler(NetworkEventHandler networkEventHandler, AuthService authService) {
+            this.networkEventHandler = networkEventHandler;
             this.authService = authService;
         }
 
@@ -234,9 +231,9 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
             }
             if (msg instanceof TextWebSocketFrame || msg instanceof BinaryWebSocketFrame) {
                 sessionChannel.setLastActivityTime(TimeTools.currentTimeMillis());
-                eventHandler.onMessage(sessionChannel, msg.content().array());
+                networkEventHandler.onMessage(sessionChannel, msg.content().array());
             } else if (msg instanceof CloseWebSocketFrame) {
-                eventHandler.onClose(sessionChannel);
+                networkEventHandler.onClose(sessionChannel);
             } else if (msg instanceof PingWebSocketFrame) {
                 channelHandlerContext.writeAndFlush(new PingWebSocketFrame());
             } else if (msg instanceof PongWebSocketFrame) {

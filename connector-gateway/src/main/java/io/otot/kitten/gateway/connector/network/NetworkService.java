@@ -9,6 +9,12 @@ import io.otot.kitten.gateway.connector.core.ServiceLifecycle;
  */
 public interface NetworkService extends ServiceLifecycle {
 
+    /***
+     * 设置端口
+     * @param port
+     */
+    void setPort(int port);
+
     /**
      * 启动网络服务
      */
@@ -26,7 +32,7 @@ public interface NetworkService extends ServiceLifecycle {
      * 设置事件处理句柄
      * @param handler
      */
-    void setEventHandler(EventHandler handler);
+    void setEventHandler(NetworkEventHandler handler);
 
 
     /**

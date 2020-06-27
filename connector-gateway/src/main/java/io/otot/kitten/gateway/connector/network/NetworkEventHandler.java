@@ -4,7 +4,7 @@ package io.otot.kitten.gateway.connector.network;
  * 事件处理句柄
  * @author fireflyhoo
  */
-public interface EventHandler {
+public interface NetworkEventHandler {
     /*****
      * 连接完成
      * @param channel

@@ -1,0 +1,3 @@
+connector:
+  port: 8899
+  businessCoreSize: 100

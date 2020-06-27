@@ -5,7 +5,6 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import io.otot.kitten.gateway.connector.core.NamedThreadFactory;
-import io.otot.kitten.gateway.connector.kernel.BusinessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

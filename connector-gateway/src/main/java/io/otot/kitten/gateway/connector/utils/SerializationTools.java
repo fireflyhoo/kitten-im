@@ -14,4 +14,8 @@ public class SerializationTools {
     public static  <T>T deserialize(byte[] data ,Class<T> clazz){
        return gson.fromJson(new String(data,UTF_8),clazz);
     }
+
+    public static byte[] serialize(Object o){
+        return  gson.toJson(o).getBytes();
+    }
 }

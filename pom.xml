@@ -8,10 +8,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>connector-gateway</module>
-        <module>register-service</module>
-        <module>store-service</module>
-        <module>session-service</module>
-        <module>business-gateway</module>
+        <module>common</module>
     </modules>
 
     <name>kitten-im</name>

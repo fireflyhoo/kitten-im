@@ -14,8 +14,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <dependencies>
@@ -35,23 +35,13 @@
       <artifactId>disruptor</artifactId>
       <version>3.4.2</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>2.12.1</version>
-    </dependency>
 
     <dependency>
       <groupId>com.auth0</groupId>
       <artifactId>java-jwt</artifactId>
       <version>3.8.3</version>
     </dependency>
-    <dependency>
-      <groupId>io.otot.kitten</groupId>
-      <artifactId>session-client</artifactId>
-      <version>1.0-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
+
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-netty-shaded</artifactId>
@@ -67,17 +57,23 @@
       <artifactId>grpc-stub</artifactId>
       <version>1.24.0</version>
     </dependency>
-      <dependency>
-          <groupId>io.otot.kitten</groupId>
-          <artifactId>store-client</artifactId>
-          <version>1.0-SNAPSHOT</version>
-          <scope>compile</scope>
-      </dependency>
     <dependency>
       <groupId>io.otot.kitten</groupId>
-      <artifactId>store-client</artifactId>
+      <artifactId>common</artifactId>
       <version>1.0-SNAPSHOT</version>
-      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+      <version>2.3.1.RELEASE</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <version>2.3.1.RELEASE</version>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>
