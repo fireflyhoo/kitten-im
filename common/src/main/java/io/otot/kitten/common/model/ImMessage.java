@@ -106,7 +106,8 @@ public class ImMessage {
         GROUP(4,"群聊"),
         ACK(5,"消息确收"),
         HEARTBEAT(6,"心跳"),
-        ECHO(7,"回声消息")
+        ECHO(7,"回声消息"),
+        CMD(8,"命令消息")
         ;
 
         private final int code;
