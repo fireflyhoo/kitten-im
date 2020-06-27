@@ -45,6 +45,11 @@ public class BusinessService implements NetworkEventHandler {
 
 
     public BusinessService() {
+    }
+
+
+    @Override
+    public void start(){
         this.commandQueueManager = new CommandQueueManager();
         if (businessCoreSize <= 0) {
             throw new IllegalArgumentException("业务处理核心最少为一个");
@@ -54,7 +59,6 @@ public class BusinessService implements NetworkEventHandler {
             dos[i] = new CommandExecuteWorkHandler();
         }
         this.commandQueueManager.start(dos);
-
     }
 
     @Override
@@ -73,23 +77,28 @@ public class BusinessService implements NetworkEventHandler {
     public void onMessage(SessionChannel channel, byte[] data) {
         this.commandQueueManager.provider().shootData((Command) () -> {
             //处理逻辑
-            ImMessage message = SerializationTools.deserialize(data, ImMessage.class);
-            ImMessage.MsgType type = ImMessage.MsgType.valueOf(message.getType());
-            switch (type) {
-                case UP_LINE:
-                    onUpLine(channel, message);
-                    break;
-                case DOWN_LINE:
-                    onDownLine(channel, message);
-                    break;
-                case ECHO:
-                    onEcho(channel, message);
-                    break;
-                case HEARTBEAT:
-                    onHeartbeat(channel, message);
-                    break;
-                default:
-                    onBusiness(channel, message);
+            try{
+                ImMessage message = SerializationTools.deserialize(data, ImMessage.class);
+                ImMessage.MsgType type = ImMessage.MsgType.valueOf(message.getType());
+                switch (type) {
+                    case UP_LINE:
+                        onUpLine(channel, message);
+                        break;
+                    case DOWN_LINE:
+                        onDownLine(channel, message);
+                        break;
+                    case ECHO:
+                        onEcho(channel, message);
+                        break;
+                    case HEARTBEAT:
+                        onHeartbeat(channel, message);
+                        break;
+                    default:
+                        onBusiness(channel, message);
+                }
+            }catch (Throwable e){
+                LOGGER.error("处理消息出现异常断开前端连接",e);
+                channel.close();
             }
         });
     }

@@ -1,4 +1,14 @@
 
 .normal {
-  background: #F2798F;
+  
+}
+
+.message_boards{
+	float: left;
+	width: 400px;
+	border:1px solid #fcf;
+}
+
+.send_pand{
+	float: left;
 }

@@ -1,3 +1,5 @@
 connector:
   port: 8899
   businessCoreSize: 100
+
+servicerKey: 'gateway-001'

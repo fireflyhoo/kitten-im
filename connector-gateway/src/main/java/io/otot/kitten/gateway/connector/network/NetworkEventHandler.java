@@ -26,4 +26,9 @@ public interface NetworkEventHandler {
      */
    void onClose(SessionChannel channel);
 
+
+    /**
+     * 启动任务
+     */
+    void start();
 }

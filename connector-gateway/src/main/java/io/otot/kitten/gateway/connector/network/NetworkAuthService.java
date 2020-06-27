@@ -5,7 +5,7 @@ package io.otot.kitten.gateway.connector.network;
  *
  * @author fireflyhoo
  */
-public interface AuthService {
+public interface NetworkAuthService {
     /***
      * 认证Token
      * @param appKey

@@ -15,14 +15,16 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.Attribute;
 import io.netty.util.CharsetUtil;
 import io.otot.kitten.gateway.connector.core.NamedThreadFactory;
-import io.otot.kitten.gateway.connector.network.AuthService;
+import io.otot.kitten.gateway.connector.network.NetworkAuthService;
 import io.otot.kitten.gateway.connector.network.NetworkEventHandler;
 import io.otot.kitten.gateway.connector.network.NetworkService;
 import io.otot.kitten.gateway.connector.network.SessionChannel;
+import io.otot.kitten.gateway.connector.session.LocalSessionManage;
 import io.otot.kitten.gateway.connector.utils.TimeTools;
 import io.otot.kitten.gateway.connector.utils.URITools;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.InetSocketAddress;
@@ -44,7 +46,6 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(WebsocketNetworkServiceNettyImpl.class);
     private static Charset UTF_8 = StandardCharsets.UTF_8;
-    private Map<String, SessionChannel> sessionChannels = new ConcurrentHashMap<>();
 
     private NioEventLoopGroup bossGroup;
     private NioEventLoopGroup workGroup;
@@ -64,8 +65,12 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
     /***
      * 认证服务
      */
-    private AuthService authService;
+    @Autowired
+    private NetworkAuthService authService;
 
+
+    @Autowired
+    private LocalSessionManage localSessionManage;
 
     public int getPort() {
         return port;
@@ -136,20 +141,8 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
         this.hander = handler;
     }
 
-    @Override
-    public SessionChannel getChannel(String key) {
-        return sessionChannels.get(key);
-    }
 
-    @Override
-    public SessionChannel setChannel(String key, SessionChannel channel) {
-        return sessionChannels.put(key, channel);
-    }
 
-    @Override
-    public SessionChannel removeChannel(String key) {
-        return sessionChannels.remove(key);
-    }
 
     class WebSocketHandler extends SimpleChannelInboundHandler<Object> {
 
@@ -160,10 +153,12 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
         private static final String WS_URL = "/socket-io";
 
         private final NetworkEventHandler networkEventHandler;
-        private final AuthService authService;
 
 
-        public WebSocketHandler(NetworkEventHandler networkEventHandler, AuthService authService) {
+        private final NetworkAuthService authService;
+
+
+        public WebSocketHandler(NetworkEventHandler networkEventHandler, NetworkAuthService authService) {
             this.networkEventHandler = networkEventHandler;
             this.authService = authService;
         }
@@ -185,7 +180,7 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
             }
             URI url = new URI(request.uri());
             if (WS_URL.equals(url.getPath())) {
-                URITools.UrlEntity entity = URITools.parse(url.getPath());
+                URITools.UrlEntity entity = URITools.parse(request.uri());
                 String appKey = entity.getQuery("appKey");
                 String token = entity.getQuery("token");
                 if (appKey == null) {
@@ -223,23 +218,28 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
         }
 
         private void handleWebSocketFrame(ChannelHandlerContext channelHandlerContext, WebSocketFrame msg) throws Exception {
-            Attribute<String> att = channelHandlerContext.channel().attr(Constants.key);
-            String channelKey = att.get();
-            SessionChannel sessionChannel = sessionChannels.get(channelKey);
-            if (sessionChannel == null) {
-                sessionChannel = new WebSocketSessionChannel(channelHandlerContext.channel());
-            }
-            if (msg instanceof TextWebSocketFrame || msg instanceof BinaryWebSocketFrame) {
-                sessionChannel.setLastActivityTime(TimeTools.currentTimeMillis());
-                networkEventHandler.onMessage(sessionChannel, msg.content().array());
-            } else if (msg instanceof CloseWebSocketFrame) {
-                networkEventHandler.onClose(sessionChannel);
-            } else if (msg instanceof PingWebSocketFrame) {
-                channelHandlerContext.writeAndFlush(new PingWebSocketFrame());
-            } else if (msg instanceof PongWebSocketFrame) {
-                sessionChannel.setLastActivityTime(TimeTools.currentTimeMillis());
-            } else if (msg instanceof ContinuationWebSocketFrame) {
-                LOGGER.warn("收到未完成数据包 ContinuationWebSocketFrame {}", msg);
+            try{
+                Attribute<String> att = channelHandlerContext.channel().attr(Constants.key);
+                String channelKey = att.get();
+                SessionChannel sessionChannel  = new WebSocketSessionChannel(channelHandlerContext.channel());
+                if (msg instanceof TextWebSocketFrame || msg instanceof BinaryWebSocketFrame) {
+                    sessionChannel.setLastActivityTime(TimeTools.currentTimeMillis());
+                    ByteBuf data = msg.content();
+                    byte[] body = new byte[msg.content().readableBytes()];
+                    msg.content().getBytes(0, body);
+                    networkEventHandler.onMessage(sessionChannel,body);
+                } else if (msg instanceof CloseWebSocketFrame) {
+                    networkEventHandler.onClose(sessionChannel);
+                } else if (msg instanceof PingWebSocketFrame) {
+                    channelHandlerContext.writeAndFlush(new PingWebSocketFrame());
+                } else if (msg instanceof PongWebSocketFrame) {
+                    sessionChannel.setLastActivityTime(TimeTools.currentTimeMillis());
+                } else if (msg instanceof ContinuationWebSocketFrame) {
+                    LOGGER.warn("收到未完成数据包 ContinuationWebSocketFrame {}", msg);
+                }
+            }catch (Throwable e){
+                LOGGER.error("处理客户端发送的数据包出现异常",e);
+                sendErrorResponse(channelHandlerContext, HttpResponseStatus.BAD_REQUEST,  "发送的数据有误!");
             }
         }
 
@@ -257,11 +257,15 @@ public class WebsocketNetworkServiceNettyImpl implements NetworkService {
         public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
             Attribute<String> att = ctx.channel().attr(Constants.key);
             String channelKey = att.get();
-            SessionChannel sessionChannel = sessionChannels.get(channelKey);
-            if (sessionChannel == null) {
-                sessionChannel = new WebSocketSessionChannel(ctx.channel());
+            if(channelKey!= null){
+                SessionChannel sessionChannel = localSessionManage.get(channelKey);
+                if (sessionChannel == null) {
+                    sessionChannel = new WebSocketSessionChannel(ctx.channel());
+                }
+                hander.onClose(sessionChannel);
+            }else{
+                LOGGER.warn("连接泄露...");
             }
-            hander.onClose(sessionChannel);
         }
 
 

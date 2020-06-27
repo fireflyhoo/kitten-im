@@ -45,6 +45,7 @@ public class ConnectorServerRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
+        businessService.start();
         network.setPort(port);
         network.setEventHandler(businessService);
         network.start();

@@ -35,31 +35,4 @@ public interface NetworkService extends ServiceLifecycle {
     void setEventHandler(NetworkEventHandler handler);
 
 
-    /**
-     * 通过channelKey 会话管道
-     * @param key
-     * @return
-     */
-    SessionChannel getChannel(String key);
-
-
-    /***
-     * 设置通道缓存
-     * @param key
-     * @param channel
-     * @return 如对应的key已经有老的通道直接返回
-     */
-    SessionChannel setChannel(String key,SessionChannel channel);
-
-
-
-    /***
-     * 移除通道
-     * @param key appKey+'@'+userKey
-     * @return
-     */
-    SessionChannel removeChannel(String key);
-
-
-
 }
