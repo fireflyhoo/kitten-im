@@ -1,19 +1,16 @@
 
 import styles from './index.css';
-
-
+import React, { useState } from 'react';
 
 
 export default function() {
 
-  
-  var messages = ["cxx"];
   var appKey = "10086";
   var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpbS15YXlhdGFvIiwiYXBwS2V5IjoiMTAwODYiLCJleHAiOjE1OTMzMjc2OTEsInVzZXJLZXkiOiJkaW5nZGluZzAifQ.Lx-launSRZYKdKpX6ukdhM-hZkjRaKsD0wbSJyaYaFU";
-
+  const [ messages, setMessage ] = useState([]);
   var handleConn = e => {
     console.log("handleConn")
-    messages.push("handleConn");
+    setMessage([...messages, "handleConn"]);
      var ws = new WebSocket("ws://127.0.0.1:8899/socket-io?appKey="+appKey+"&token="+token);
                 
        ws.onopen = function()
@@ -27,6 +24,7 @@ export default function() {
        { 
           var received_msg = evt.data;
           alert("数据已接收..." + received_msg);
+          setMessage([...messages, "xx"]);
        };
         
        ws.onclose = function()
