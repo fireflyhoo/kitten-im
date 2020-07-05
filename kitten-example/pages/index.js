@@ -2,41 +2,53 @@
 import styles from './index.css';
 import React, { useState } from 'react';
 
-
+var ws  = null;
 export default function() {
 
   var appKey = "10086";
-  var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpbS15YXlhdGFvIiwiYXBwS2V5IjoiMTAwODYiLCJleHAiOjE1OTMzMjc2OTEsInVzZXJLZXkiOiJkaW5nZGluZzAifQ.Lx-launSRZYKdKpX6ukdhM-hZkjRaKsD0wbSJyaYaFU";
+  var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpbS15YXlhdGFvIiwiYXBwS2V5IjoiMTAwODYiLCJleHAiOjE1OTM4OTQ1ODgsInVzZXJLZXkiOiJkaW5nZGluZzAifQ.qYI4AhgfKvfGjPuXK0x6oqF7zZ2fxK-Kqkj4ccFwDaE";
   const [ messages, setMessage ] = useState([]);
+
+
   var handleConn = e => {
     console.log("handleConn")
     setMessage([...messages, "handleConn"]);
-     var ws = new WebSocket("ws://127.0.0.1:8899/socket-io?appKey="+appKey+"&token="+token);
+     ws = new WebSocket("ws://127.0.0.1:8899/socket-io?appKey="+appKey+"&token="+token);
                 
-       ws.onopen = function()
-       {
+       ws.onopen = function(){
           // Web Socket 已连接上，使用 send() 方法发送数据
           ws.send('{"type":7}');
-          alert("数据发送中...");
        };
         
-       ws.onmessage = function (evt) 
-       { 
-          var received_msg = evt.data;
-          alert("数据已接收..." + received_msg);
-          setMessage([...messages, "xx"]);
+       ws.onmessage = function (evt){
+       	  evt.data.text().then(text => {
+       	  	console.log(text);
+       	  });
+       	  console.log("onMessage:",evt.data);
+        
+          
        };
         
-       ws.onclose = function()
-       { 
+       ws.onclose = function(e){
+          console.log(e);
           // 关闭 websocket
           alert("连接已关闭..."); 
        };
   };
 
   var handleSendMessage = e =>{
-  	console.log("send message")
+    console.log(ws);
+  	ws.send('{"type":7}')
+
   };
+
+  function Uint8ArrayToString(fileData){
+	  var dataString = "";
+	  for (var i = 0; i < fileData.length; i++) {
+	    dataString += String.fromCharCode(fileData[i]);
+	  }
+	  return dataString
+  }
 
 
   return (
