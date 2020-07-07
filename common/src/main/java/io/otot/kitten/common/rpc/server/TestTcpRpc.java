@@ -1,27 +1,26 @@
 package io.otot.kitten.common.rpc.server;
 
-import io.netty.handler.timeout.ReadTimeoutHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.tcp.TcpServer;
 
-import java.util.concurrent.TimeUnit;
-
 public class TestTcpRpc {
     public static void main(String[] args) {
         DisposableServer server = TcpServer.create()
-                .doOnConnection(conn ->
-                        conn.addHandler(new ReadTimeoutHandler(3, TimeUnit.SECONDS))
-                )
+//                .doOnConnection(conn ->
+//                        conn.addHandler(new ReadTimeoutHandler(3, TimeUnit.SECONDS))
+//                )
                 .handle((inbound, outbound) -> {
-                            outbound.sendString(Mono.just("hello"));
-                            outbound.send(inbound.receive().map((bs) -> {
-                                System.out.println(bs.readableBytes());
-                                return bs;
-                            }));
+                            inbound.receive().asString().map((s)->{
+                                System.out.println(s);
+                                outbound.sendString(Mono.just(s+ " 你妹啊!")).then().subscribe();
+                                return s;
+                            }).then().subscribe();
 
-                            System.out.println("tests");
-                            return outbound.sendString(Mono.just("xxxxxosos"));
+                            outbound.sendString(Mono.just("hello "))
+                                    .sendString(Mono.just("Hello Server  oo "))
+                                    .then().subscribe();
+                            return Mono.never();
 
                         }
                 )

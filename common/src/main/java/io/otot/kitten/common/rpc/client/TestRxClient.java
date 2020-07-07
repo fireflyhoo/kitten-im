@@ -3,11 +3,9 @@ package io.otot.kitten.common.rpc.client;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import reactor.core.publisher.Mono;
 import reactor.netty.Connection;
-import reactor.netty.NettyOutbound;
 import reactor.netty.tcp.TcpClient;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.concurrent.TimeUnit;
 
 public class TestRxClient {
@@ -18,18 +16,16 @@ public class TestRxClient {
                 })
                 .host("127.0.0.1")
                 .port(9889)
-                .handle(((inbound, outbound) -> {
-                    final NettyOutbound hello = outbound.sendString(Mono.just("hello"));
-
-                    inbound.receive().asString().subscribe((s)->{
-                        System.out.println("clinet " + s);
-                    });
-                   return outbound;
-                }))
                 .connectNow();
 
-        connection.onDispose().block();
+      //  connection.onDispose().block();
+        connection.outbound().sendString(Mono.just("Goss")).then().subscribe();
+        connection.inbound().receive().asString().map(s -> {
+            System.out.println(s);
+            connection.outbound().sendString(Mono.just("呵呵...")).then().subscribe();
+            return s;
+        }).then().subscribe();
         System.in.read();
-        System.in.read();
+        connection.channel();
     }
 }
