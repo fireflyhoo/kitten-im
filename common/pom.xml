@@ -30,5 +30,10 @@
       <artifactId>reactor-netty</artifactId>
       <version>0.9.9.RELEASE</version>
     </dependency>
+    <dependency>
+      <groupId>com.esotericsoftware</groupId>
+      <artifactId>kryo</artifactId>
+      <version>5.0.0-RC7</version>
+    </dependency>
   </dependencies>
 </project>

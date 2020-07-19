@@ -1,15 +1,26 @@
 package io.otot.kitten.common.rpc.server;
 
+import io.otot.kitten.common.rpc.codec.EnvelopeParcel;
+import io.otot.kitten.common.rpc.codec.EnvelopeSlicer;
+import io.otot.kitten.common.rpc.codec.MessageDuplexCodec;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.tcp.TcpServer;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class TestTcpRpc {
+    private static AtomicBoolean closing = new AtomicBoolean(false);
+
     public static void main(String[] args) {
         DisposableServer server = TcpServer.create()
-//                .doOnConnection(conn ->
-//                        conn.addHandler(new ReadTimeoutHandler(3, TimeUnit.SECONDS))
-//                )
+                .doOnConnection(connection ->{
+                    connection.addHandler(EnvelopeSlicer.NAME, new EnvelopeSlicer());
+                    connection.addHandler(EnvelopeParcel.NAME, new EnvelopeParcel());
+                    connection.addHandlerLast(MessageDuplexCodec.NAME, new MessageDuplexCodec(closing));
+                        }
+
+                )
                 .handle((inbound, outbound) -> {
                             inbound.receive().asString().map((s)->{
                                 System.out.println(s);
